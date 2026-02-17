@@ -35,7 +35,7 @@ function SortablePage({ page, onToggle }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative flex flex-col items-center p-1 border rounded
+      className={`relative flex flex-col items-center p-1  rounded
         ${page.deleted ? "opacity-40 grayscale bg-red-50" : "bg-white"}
       `}
     >
@@ -48,23 +48,23 @@ function SortablePage({ page, onToggle }) {
       >
         <img
           src={page.img}
-          className="w-[80px] h-[120px] border rounded bg-white"
+          className="w-[80px] h-[120px] border border-dashed border-blue-500  rounded bg-white"
           draggable={false}
         />
       </div>
 
       {/* CLICKABLE DELETE BUTTON */}
-      <button
-        onClick={() => {
-          console.log("DELETE CLICKED:", page.pageNo);
-          onToggle(page.pageNo);
-        }}
-        className={`absolute top-1 right-1 w-5 h-5 text-xs rounded-full text-white z-10
-          ${page.deleted ? "bg-green-600" : "bg-red-600"}
-        `}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onToggle(page.pageNo)}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onToggle(page.pageNo)}
+        aria-label={page.deleted ? "Restore page" : "Delete page"}
+        title={page.deleted ? "Restore page" : "Delete page"}
+        className={`absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center rounded-full text-white text-xs font-semibold shadow-md cursor-pointer select-none transition-all duration-150 ease-out hover:scale-110 hover:shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1 ${page.deleted ? "bg-green-600 hover:bg-green-700 focus:ring-green-400" : "bg-red-600 hover:bg-red-700 focus:ring-red-400"}`}
       >
         {page.deleted ? "↺" : "✕"}
-      </button>
+      </div>
 
       <span className="text-[10px] mt-1">
         Page {page.pageNo}
@@ -107,7 +107,7 @@ export default function PdfPageOrganizerFinal() {
           if (cancelled) return;
 
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 0.25 });
+          const viewport = page.getViewport({ scale: 0.15 });
 
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
@@ -264,6 +264,7 @@ export default function PdfPageOrganizerFinal() {
                 strategy={verticalListSortingStrategy}
               >
                 <div className="flex flex-wrap gap-3">
+              
                   {previews[file.name]?.pages.map((p) => (
                     <SortablePage
                       key={p.id}
