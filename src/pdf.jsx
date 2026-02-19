@@ -12,6 +12,7 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useCallback } from "react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -85,12 +86,12 @@ export default function PdfPageOrganizerFinal() {
 
 
   /* ---------- Upload ---------- */
-  const handleFiles = (list) => {
+  const handleFiles = useCallback((list) => {
     const pdfs = Array.from(list).filter(
       (f) => f.type === "application/pdf"
     );
     setFiles(pdfs);
-  };
+  }, []);
 
   /* ---------- Generate previews ---------- */
   useEffect(() => {
@@ -147,7 +148,7 @@ export default function PdfPageOrganizerFinal() {
   }, [files]);
 
   /* ---------- Toggle delete ---------- */
-  const toggleDelete = (file, pageNo) => {
+  const toggleDelete = useCallback((file, pageNo) => {
     setPreviews((prev) => ({
       ...prev,
       [file]: {
@@ -158,7 +159,7 @@ export default function PdfPageOrganizerFinal() {
         )
       }
     }));
-  };
+  }, [])
 
   /* ---------- Bulk delete (add-only) ---------- */
   const applyBulkDeleteAll = () => {
@@ -191,7 +192,7 @@ export default function PdfPageOrganizerFinal() {
   };
 
   /* ---------- Drag reorder ---------- */
-  const onDragEnd = (file, event) => {
+  const onDragEnd = useCallback((file, event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -207,7 +208,7 @@ export default function PdfPageOrganizerFinal() {
         }
       };
     });
-  };
+  }, []);
 
   /* ---------- Export ---------- */
   // const processPDFs = async () => {
@@ -301,7 +302,6 @@ export default function PdfPageOrganizerFinal() {
     }
   };
 
-
   const handleReset = () => {
     setFiles([]);
     setPreviews({});
@@ -312,7 +312,7 @@ export default function PdfPageOrganizerFinal() {
   /* ---------- UI ---------- */
   return (
     <div className="min-h-fit bg-slate-300 rounded-xl lg:p-3 mt-2 p-2">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 lg:gap-4">
+      <div className="relative  grid grid-cols-1 md:grid-cols-4 gap-2 lg:gap-4">
 
         {/* EMPTY STATE */}
         {files.length < 1 && (
@@ -389,7 +389,7 @@ export default function PdfPageOrganizerFinal() {
 
         {/* RIGHT SECTION */}
         {files.length > 0 && (
-          <div className="md:col-span-1 bg-white p-3 md:p-4 rounded-xl shadow space-y-4">
+          <div className="md:col-span-1 relative bg-white p-3 md:p-4 rounded-xl shadow space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-600">
                 Delete pages
@@ -410,63 +410,64 @@ export default function PdfPageOrganizerFinal() {
               </div>
             </div>
 
-            <div className="space-y-2  p-3">
-              <label className="text-xs font-medium text-gray-600">
-                Choose format
-              </label>
+            <span className="sticky top-1 space-y-2  inline-block w-full">
+              <div className="space-y-2  ">
+                <label className="text-xs font-medium text-gray-600">
+                  Choose format
+                </label>
 
-              <div className="flex rounded-lg overflow-hidden border border-dashed">
-                {/* ZIP */}
-                <button
-                  type="button"
-                  onClick={() => setDownloadMode("zip")}
-                  className={`flex-1 py-2 text-sm font-medium transition cursor-pointer
+                <div className="flex rounded-lg overflow-hidden border border-dashed">
+                  {/* ZIP */}
+                  <button
+                    type="button"
+                    onClick={() => setDownloadMode("zip")}
+                    className={`flex-1 py-2 text-sm font-medium transition cursor-pointer
                    ${downloadMode === "zip"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100"}`}
-                >
-                  ZIP
-                  <span className="block text-[10px] opacity-80">
-                    Recommended
-                  </span>
-                </button>
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"}`}
+                  >
+                    ZIP
+                    <span className="block text-[10px] opacity-80">
+                      Recommended
+                    </span>
+                  </button>
 
-                {/* SINGLE */}
-                <button
-                  type="button"
-                  onClick={() => setDownloadMode("single")}
-                  className={`flex-1 py-2 text-sm font-medium transition
+                  {/* SINGLE */}
+                  <button
+                    type="button"
+                    onClick={() => setDownloadMode("single")}
+                    className={`flex-1 py-2 text-sm font-medium transition
                   ${downloadMode === "single"
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100"}`}
-                >
-                  Individual
-                  <span className="block text-[10px] opacity-80">
-                    Multiple files
-                  </span>
-                </button>
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-100"}`}
+                  >
+                    Individual
+                    <span className="block text-[10px] opacity-80">
+                      Multiple files
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
+              <button
+                onClick={processPDFs}
+                disabled={loading}
+                className="w-full  cursor-pointer bg-blue-600 text-white py-2 rounded disabled:opacity-60"
+              >
+                {loading
+                  ? "Processing..."
+                  : `Download Files${files.length ? ` (${files.length})` : ""}`}
+              </button>
 
-
-            <button
-              onClick={processPDFs}
-              disabled={loading}
-              className="w-full cursor-pointer bg-blue-600 text-white py-2 rounded disabled:opacity-60"
-            >
-              {loading
-                ? "Processing..."
-                : `Download Files${files.length ? ` (${files.length})` : ""}`}
-            </button>
-
-            <button
-              onClick={handleReset}
-              disabled={loading}
-              className="w-full border cursor-pointer border-red-500 text-red-600 hover:bg-red-50 py-2 rounded transition"
-            >
-              Clear
-            </button>
+              <button
+                onClick={handleReset}
+                disabled={loading}
+                className="w-full border cursor-pointer border-red-500 text-red-600 hover:bg-red-50 py-2 rounded transition"
+              >
+                Clear
+              </button>
+            </span>
           </div>
+
         )}
       </div>
     </div>
