@@ -80,6 +80,9 @@ export default function PdfPageOrganizerFinal() {
   const [deleteInput, setDeleteInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
+  const [downloadMode, setDownloadMode] = useState("zip");
+  // "zip" | "single"
+
 
   /* ---------- Upload ---------- */
   const handleFiles = (list) => {
@@ -92,9 +95,9 @@ export default function PdfPageOrganizerFinal() {
   /* ---------- Generate previews ---------- */
   useEffect(() => {
     let cancelled = false;
-    console.log(files)
 
     const generate = async () => {
+      document.body.classList.add("cursor-loading");
       const init = {};
       files.forEach((f) => (init[f.name] = { pages: [] }));
       setPreviews(init);
@@ -139,6 +142,7 @@ export default function PdfPageOrganizerFinal() {
     };
 
     files.length ? generate() : setPreviews({});
+    document.body.classList.remove("cursor-loading");
     return () => (cancelled = true);
   }, [files]);
 
@@ -206,34 +210,97 @@ export default function PdfPageOrganizerFinal() {
   };
 
   /* ---------- Export ---------- */
+  // const processPDFs = async () => {
+  //   setLoading(true);
+  //   document.body.classList.add("cursor-loading");
+
+  //   try {
+  //     const zip = new JSZip();
+
+  //     for (const file of files) {
+  //       const bytes = await file.arrayBuffer();
+  //       const pdfDoc = await PDFDocument.load(bytes);
+  //       const newDoc = await PDFDocument.create();
+
+  //       for (const p of previews[file.name].pages) {
+  //         if (p.deleted) continue;
+  //         const [copied] = await newDoc.copyPages(pdfDoc, [p.pageNo - 1]);
+  //         newDoc.addPage(copied);
+  //       }
+
+  //       zip.file(`modified-${file.name}`, await newDoc.save());
+  //     }
+
+  //     const blob = await zip.generateAsync({ type: "blob" });
+  //     const url = URL.createObjectURL(blob);
+
+  //     Object.assign(document.createElement("a"), {
+  //       href: url,
+  //       download: "processed-pdfs.zip",
+  //     }).click();
+
+  //   } finally {
+  //     setLoading(false);
+  //     document.body.classList.remove("cursor-loading");
+  //   }
+  // };
   const processPDFs = async () => {
     setLoading(true);
-    const zip = new JSZip();
+    document.body.classList.add("cursor-loading");
 
-    for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(bytes);
-      const newDoc = await PDFDocument.create();
+    try {
+      const zip = new JSZip();
 
-      for (const p of previews[file.name].pages) {
-        if (p.deleted) continue;
-        const [copied] = await newDoc.copyPages(pdfDoc, [p.pageNo - 1]);
-        newDoc.addPage(copied);
+      for (const file of files) {
+        const bytes = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(bytes);
+        const newDoc = await PDFDocument.create();
+
+        for (const p of previews[file.name].pages) {
+          if (p.deleted) continue;
+          const [copied] = await newDoc.copyPages(pdfDoc, [p.pageNo - 1]);
+          newDoc.addPage(copied);
+        }
+
+        const pdfBytes = await newDoc.save();
+        const fileName = `modified-${file.name}`;
+
+        if (downloadMode === "single") {
+          // 🔹 download immediately
+          const blob = new Blob([pdfBytes], { type: "application/pdf" });
+          const url = URL.createObjectURL(blob);
+
+          Object.assign(document.createElement("a"), {
+            href: url,
+            download: fileName,
+          }).click();
+
+          URL.revokeObjectURL(url);
+        } else {
+          // 🔹 add to zip
+          zip.file(fileName, pdfBytes);
+        }
       }
 
-      zip.file(`modified-${file.name}`, await newDoc.save());
+      // 🔹 ZIP download
+      if (downloadMode === "zip") {
+        const blob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(blob);
+
+        Object.assign(document.createElement("a"), {
+          href: url,
+          download: "processed-pdfs.zip",
+        }).click();
+
+        URL.revokeObjectURL(url);
+      }
+
+    } finally {
+      setLoading(false);
+      document.body.classList.remove("cursor-loading");
     }
-
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-
-    Object.assign(document.createElement("a"), {
-      href: url,
-      download: "processed-pdfs.zip"
-    }).click();
-
-    setLoading(false);
   };
+
 
   const handleReset = () => {
     setFiles([]);
@@ -343,19 +410,59 @@ export default function PdfPageOrganizerFinal() {
               </div>
             </div>
 
+            <div className="space-y-2  p-3">
+              <label className="text-xs font-medium text-gray-600">
+                Choose format
+              </label>
+
+              <div className="flex rounded-lg overflow-hidden border border-dashed">
+                {/* ZIP */}
+                <button
+                  type="button"
+                  onClick={() => setDownloadMode("zip")}
+                  className={`flex-1 py-2 text-sm font-medium transition cursor-pointer
+                   ${downloadMode === "zip"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100"}`}
+                >
+                  ZIP
+                  <span className="block text-[10px] opacity-80">
+                    Recommended
+                  </span>
+                </button>
+
+                {/* SINGLE */}
+                <button
+                  type="button"
+                  onClick={() => setDownloadMode("single")}
+                  className={`flex-1 py-2 text-sm font-medium transition
+                  ${downloadMode === "single"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100"}`}
+                >
+                  Individual
+                  <span className="block text-[10px] opacity-80">
+                    Multiple files
+                  </span>
+                </button>
+              </div>
+            </div>
+
+
             <button
               onClick={processPDFs}
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded disabled:opacity-60"
+              className="w-full cursor-pointer bg-blue-600 text-white py-2 rounded disabled:opacity-60"
             >
               {loading
                 ? "Processing..."
-                : `Download ZIP${files.length ? ` (${files.length})` : ""}`}
+                : `Download Files${files.length ? ` (${files.length})` : ""}`}
             </button>
 
             <button
               onClick={handleReset}
-              className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded transition"
+              disabled={loading}
+              className="w-full border cursor-pointer border-red-500 text-red-600 hover:bg-red-50 py-2 rounded transition"
             >
               Clear
             </button>
