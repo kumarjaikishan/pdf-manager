@@ -107,7 +107,7 @@ export default function PdfPageOrganizerFinal() {
           if (cancelled) return;
 
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 0.15 });
+          const viewport = page.getViewport({ scale: 0.13 });
 
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
@@ -244,77 +244,85 @@ export default function PdfPageOrganizerFinal() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-slate-300 rounded-xl p-3 grid grid-cols-4 gap-6">
+    <div className="min-h-fit bg-slate-300 rounded-xl lg:p-3 mt-2 p-2">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 lg:gap-4">
 
-      {/* LEFT */}
-      <div className="col-span-3 bg-white p-4 rounded-xl shadow overflow-y-auto">
-        {files.length < 1 && <div className=" text-2xl text-slate-600">
-          Select Pdfs file to see Preview
-        </div>}
-        {files.map((file, ind) => (
-          <div key={file.name} className="mb-6 border border-gray-400 rounded-2xl p-2 border-dashed min-h-50">
-            <p className="font-medium text-start mb-2">{ind + 1}. {file.name} -  <span className=" text-slate-500">{(file.size / 1024).toFixed(1)} KB</span> </p>
-
-            <DndContext
-              collisionDetection={closestCenter}
-              onDragEnd={(e) => onDragEnd(file.name, e)}
+        {/* EMPTY STATE */}
+        {files.length < 1 && (
+          <div className="md:col-span-4 flex justify-center">
+            <div
+              className={`border-2 w-full max-w-sm min-h-[200px] rounded-2xl font-semibold border-dashed p-4 flex justify-center items-center flex-col cursor-pointer transition
+              ${drag ? "bg-blue-50 border-blue-500" : "border-blue-400"}`}
+              onClick={() => document.getElementById("fileInput").click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDrag(false);
+                handleFiles(e.dataTransfer.files);
+              }}
             >
-              <SortableContext
-                items={previews[file.name]?.pages.map((p) => p.id) || []}
-                strategy={verticalListSortingStrategy}
+              <p className="text-center">
+                Drag & Drop PDFs<br />
+                <span className="text-blue-600">or click to upload</span>
+              </p>
+              <input
+                id="fileInput"
+                type="file"
+                multiple
+                accept="application/pdf"
+                hidden
+                onChange={(e) => handleFiles(e.target.files)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* LEFT SECTION */}
+        {files.length > 0 && (
+          <div className="md:col-span-3 bg-white p-3 md:p-4 rounded-xl shadow overflow-y-auto">
+            {files.map((file, ind) => (
+              <div
+                key={file.name}
+                className="mb-5 border border-gray-300 rounded-xl p-3 border-dashed"
               >
-                <div className="flex flex-wrap gap-3">
-              
-                  {previews[file.name]?.pages.map((p) => (
-                    <SortablePage
-                      key={p.id}
-                      page={p}
-                      onToggle={(pg) =>
-                        toggleDelete(file.name, pg)
-                      }
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+                <p className="font-medium mb-3 text-sm md:text-base break-all">
+                  {ind + 1}. {file.name}
+                  <span className="text-slate-500 ml-2 text-xs">
+                    ({(file.size / 1024).toFixed(1)} KB)
+                  </span>
+                </p>
+
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={(e) => onDragEnd(file.name, e)}
+                >
+                  <SortableContext
+                    items={previews[file.name]?.pages.map((p) => p.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="flex  min-h-40 p-2 flex-wrap gap-2 md:gap-3">
+                      {previews[file.name]?.pages.map((p) => (
+                        <SortablePage
+                          key={p.id}
+                          page={p}
+                          onToggle={(pg) => toggleDelete(file.name, pg)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* RIGHT */}
-      <div className="col-span-1 bg-white p-4 rounded-xl shadow space-y-4">
-        {files.length < 1 &&
-          <div
-            className={`border-2 h-40 rounded-2xl font-semibold border-dashed p-2 flex justify-center items-center flex-col cursor-pointer ${drag ? "bg-blue-50 border-blue-500" : "border-blue-400"
-              }`}
-            onClick={() => document.getElementById("fileInput").click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDrag(true);
-            }}
-            onDragLeave={() => setDrag(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDrag(false);
-              handleFiles(e.dataTransfer.files);
-            }}
-          >
-            Drag & Drop PDFs<br />
-            <span className="text-blue-600 ">or click to upload</span>
-
-            <input
-              id="fileInput"
-              type="file"
-              multiple
-              accept="application/pdf"
-              hidden
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </div>
-        }
-
-        {files.length > 0 &&
-          <>
+        {/* RIGHT SECTION */}
+        {files.length > 0 && (
+          <div className="md:col-span-1 bg-white p-3 md:p-4 rounded-xl shadow space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-600">
                 Delete pages
@@ -323,12 +331,12 @@ export default function PdfPageOrganizerFinal() {
               <div className="relative">
                 <input
                   placeholder="e.g. 1,3,5-7"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-red-500"
                   value={deleteInput}
                   onChange={(e) => setDeleteInput(e.target.value)}
                   onBlur={applyBulkDeleteAll}
                 />
-
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
                   pages
                 </span>
@@ -338,9 +346,11 @@ export default function PdfPageOrganizerFinal() {
             <button
               onClick={processPDFs}
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded"
+              className="w-full bg-blue-600 text-white py-2 rounded disabled:opacity-60"
             >
-              {loading ? "Processing..." : `Download ZIP${files.length ? ` (${files.length})` : ""}`}
+              {loading
+                ? "Processing..."
+                : `Download ZIP${files.length ? ` (${files.length})` : ""}`}
             </button>
 
             <button
@@ -349,10 +359,10 @@ export default function PdfPageOrganizerFinal() {
             >
               Clear
             </button>
-          </>
-        }
-
+          </div>
+        )}
       </div>
     </div>
   );
+
 }
