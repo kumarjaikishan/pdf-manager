@@ -311,15 +311,15 @@ export default function PdfPageOrganizerFinal() {
 
   /* ---------- UI ---------- */
   return (
-    <div className="min-h-fit bg-slate-300 rounded-xl lg:p-3 mt-2 p-2">
+    <div className="min-h-screen bg-slate-300 rounded-xl lg:p-3 mt-2 p-2">
       <div className="relative  grid grid-cols-1 md:grid-cols-4 gap-2 lg:gap-4">
 
-        {/* EMPTY STATE */}
+        {/*Drag & drop */}
         {files.length < 1 && (
-          <div className="md:col-span-4 flex justify-center">
+          <div className="md:col-span-4  mt-3 flex justify-center">
             <div
-              className={`border-2 w-full max-w-sm min-h-[200px] rounded-2xl font-semibold border-dashed p-4 flex justify-center items-center flex-col cursor-pointer transition
-              ${drag ? "bg-blue-50 border-blue-500" : "border-blue-400"}`}
+              className={`border-2 bg-white  w-full max-w-sm min-h-[200px] rounded-2xl font-semibold border-dashed p-4 flex justify-center items-center flex-col cursor-pointer transition
+              ${drag ? "bg-blue-50 border-blue-800" : "border-blue-400"}`}
               onClick={() => document.getElementById("fileInput").click()}
               onDragOver={(e) => {
                 e.preventDefault();
