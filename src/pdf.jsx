@@ -436,7 +436,7 @@ export default function PdfPageOrganizerFinal() {
                   <button
                     type="button"
                     onClick={() => setDownloadMode("single")}
-                    className={`flex-1 py-2 text-sm font-medium transition
+                    className={`flex-1 py-2 text-sm font-medium transition cursor-pointer
                   ${downloadMode === "single"
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-600 hover:bg-gray-100"}`}
